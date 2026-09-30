@@ -2,6 +2,7 @@ import { createDeferred } from "openclaw/plugin-sdk/extension-shared";
 import type { SsrFPolicy } from "openclaw/plugin-sdk/security-runtime";
 import { normalizeOptionalString } from "openclaw/plugin-sdk/string-coerce-runtime";
 import type { Browser, Page, Response } from "playwright-core";
+import { isSelectableCdpBrowserTarget } from "./cdp-target-filter.js";
 import {
   appendCdpPath,
   assertCdpEndpointAllowed,
@@ -11,7 +12,6 @@ import {
   withCdpSocket,
 } from "./cdp.helpers.js";
 import { AX_REF_PATTERN, normalizeCdpWsUrl } from "./cdp.js";
-import { isSelectableCdpBrowserTarget } from "./cdp-target-filter.js";
 import { DEFAULT_BROWSER_ACTION_TIMEOUT_MS } from "./constants.js";
 import { resolveBrowserEngine } from "./engines/registry.js";
 import type { BrowserEngineId } from "./engines/types.js";

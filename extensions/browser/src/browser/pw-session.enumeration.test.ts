@@ -38,20 +38,22 @@ function makePageEnumerationBrowser(
   const browserClose = vi.fn(async () => {});
   const specByPage = new WeakMap<import("playwright-core").Page, (typeof specs)[number]>();
   const pageEvents: EventEmitter[] = [];
-  const pages = specs.filter((spec) => spec.published !== false).map((spec) => {
-    const events = new EventEmitter();
-    pageEvents.push(events);
-    const page = {
-      on: events.on.bind(events),
-      off: events.off.bind(events),
-      context: () => context,
-      title: vi.fn(spec.readTitle ?? (async () => spec.title)),
-      url: vi.fn(() => spec.url),
-      isClosed: spec.isClosed ?? (() => false),
-    } as unknown as import("playwright-core").Page;
-    specByPage.set(page, spec);
-    return page;
-  });
+  const pages = specs
+    .filter((spec) => spec.published !== false)
+    .map((spec) => {
+      const events = new EventEmitter();
+      pageEvents.push(events);
+      const page = {
+        on: events.on.bind(events),
+        off: events.off.bind(events),
+        context: () => context,
+        title: vi.fn(spec.readTitle ?? (async () => spec.title)),
+        url: vi.fn(() => spec.url),
+        isClosed: spec.isClosed ?? (() => false),
+      } as unknown as import("playwright-core").Page;
+      specByPage.set(page, spec);
+      return page;
+    });
   const newCDPSession = vi.fn(async (page: import("playwright-core").Page) => {
     const spec = specByPage.get(page);
     if (!spec) {
