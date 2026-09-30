@@ -11,6 +11,7 @@ import {
   withCdpSocket,
 } from "./cdp.helpers.js";
 import { AX_REF_PATTERN, normalizeCdpWsUrl } from "./cdp.js";
+import { isSelectableCdpBrowserTarget } from "./cdp-target-filter.js";
 import { DEFAULT_BROWSER_ACTION_TIMEOUT_MS } from "./constants.js";
 import { resolveBrowserEngine } from "./engines/registry.js";
 import type { BrowserEngineId } from "./engines/types.js";
@@ -357,7 +358,9 @@ async function readPagesViaPlaywright(
             return new Set(
               result.targetInfos
                 .filter(
-                  (info) => info.type === "page" && !isBlockedTarget(opts.cdpUrl, info.targetId),
+                  (info) =>
+                    isSelectableCdpBrowserTarget(info) &&
+                    !isBlockedTarget(opts.cdpUrl, info.targetId),
                 )
                 .map((info) => info.targetId),
             );
