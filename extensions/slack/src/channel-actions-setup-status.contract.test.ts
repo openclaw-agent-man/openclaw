@@ -53,6 +53,7 @@ function expectSharedSigningSecret(cfg: OpenClawConfig, accountId: string) {
 
 const slackDefaultActions = [
   "send",
+  "channel-create",
   "conversation-open",
   "react",
   "reactions",
