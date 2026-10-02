@@ -27,7 +27,8 @@ function buildRoutingSchema(options: { includeTeamId?: boolean }) {
   if (options.includeTeamId) {
     props.teamId = Type.Optional(
       Type.String({
-        description: "Team or workspace ID for channel-info, channel-list, or conversation-open.",
+        description:
+          "Team or workspace ID for channel-create, channel-info, channel-list, or conversation-open.",
       }),
     );
   }
