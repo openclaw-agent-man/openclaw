@@ -335,7 +335,7 @@ describe("ExtensionRelayBridge", () => {
 
   it("acknowledges auto-attach before a slow native attachment settles", async () => {
     const bridge = new ExtensionRelayBridge();
-    let attach: RelayToExtensionMessage | undefined;
+    let attach: Extract<RelayToExtensionMessage, { type: "attach" }> | undefined;
     const extension = wireExtension(bridge, (message) => {
       if (message.type === "attach") {
         attach = message;
