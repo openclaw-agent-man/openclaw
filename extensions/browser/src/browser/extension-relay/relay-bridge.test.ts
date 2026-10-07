@@ -333,8 +333,8 @@ describe("ExtensionRelayBridge", () => {
     });
   });
 
-  it("acknowledges auto-attach before a slow native attachment settles", async () => {
-    const bridge = new ExtensionRelayBridge();
+  it("announces initial targets before acknowledging auto-attach", async () => {
+    const bridge = createBridge();
     let attach: Extract<RelayToExtensionMessage, { type: "attach" }> | undefined;
     const extension = wireExtension(bridge, (message) => {
       if (message.type === "attach") {
@@ -351,7 +351,7 @@ describe("ExtensionRelayBridge", () => {
     await flush();
 
     expect(attach).toBeDefined();
-    expect(response(client, 1)).toMatchObject({ result: {} });
+    expect(response(client, 1)).toBeUndefined();
 
     deliver(extension.handlers, {
       type: "result",
@@ -359,9 +359,15 @@ describe("ExtensionRelayBridge", () => {
       result: { targetId: "target-1" },
     });
     await flush();
-    expect(
-      client.frames().find((frame) => frame.method === "Target.attachedToTarget"),
-    ).toBeTruthy();
+    expect(client.frames()).toEqual([
+      expect.objectContaining({
+        method: "Target.attachedToTarget",
+        params: expect.objectContaining({
+          targetInfo: expect.objectContaining({ targetId: "target-1" }),
+        }),
+      }),
+      { id: 1, result: {} },
+    ]);
   });
 
   it.each(["active", "replaced extension"])(
@@ -1100,6 +1106,6 @@ it.each(["attach", "createTab"])(
     deliver(extension, { type: "result", seq: detach?.seq, result: {} });
     await closing;
     expect(finished).toBe(true);
-    expect(clientSocket.frames()).toEqual(operation === "attach" ? [{ id: 1, result: {} }] : []);
+    expect(clientSocket.frames()).toEqual([]);
   },
 );

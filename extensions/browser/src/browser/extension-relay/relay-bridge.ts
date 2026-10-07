@@ -1102,10 +1102,9 @@ export class ExtensionRelayBridge {
         client.autoAttach = autoAttach;
         if (autoAttach) {
           client.detachedTabs.clear();
-          // Chrome serializes some debugger-attachment work. Do not let a tab
-          // that becomes restricted between inventory and attachment hold the
-          // CDP handshake past Playwright's connect timeout.
-          void Promise.allSettled(
+          // Puppeteer's TargetManager treats this reply as the initial attachment
+          // barrier. Announce granted targets first so its first page list is complete.
+          const attachResults = await Promise.allSettled(
             [...this.tabs]
               .filter(([, tab]) =>
                 isSelectableCdpBrowserTarget({ type: "page", url: tab.info.url }),
@@ -1119,13 +1118,12 @@ export class ExtensionRelayBridge {
                   );
                 }),
               ),
-          ).then((attachResults) => {
-            for (const settled of attachResults) {
-              if (settled.status === "rejected") {
-                log.warn(`setAutoAttach attach failed: ${String(settled.reason)}`);
-              }
+          );
+          for (const settled of attachResults) {
+            if (settled.status === "rejected") {
+              log.warn(`setAutoAttach attach failed: ${String(settled.reason)}`);
             }
-          });
+          }
         }
         this.respond(client, request, {});
         return;
