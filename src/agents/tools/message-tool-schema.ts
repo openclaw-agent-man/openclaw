@@ -518,7 +518,10 @@ function buildMessageToolSchema(actions: readonly string[], options: MessageTool
     ...options,
     includeTeamId: actions.some(
       (action) =>
-        action === "channel-info" || action === "channel-list" || action === "conversation-open",
+        action === "channel-info" ||
+        action === "channel-list" ||
+        action === "channel-create" ||
+        action === "conversation-open",
     ),
   };
   // Keep one flat object: provider adapters reject per-action anyOf/oneOf schemas.

@@ -1677,11 +1677,17 @@ describe("message tool schema scoping", () => {
   });
 
   it.each([
+<<<<<<< HEAD
     { action: "channel-create", fields: ["teamId", "name"], scopedOnly: false },
     { action: "conversation-open", fields: ["teamId"], scopedOnly: false },
     { action: "send", fields: [], scopedOnly: false },
     { action: "channel-move", fields: ["position", "parentId"], scopedOnly: true },
     { action: "category-delete", fields: ["categoryId"], scopedOnly: true },
+=======
+    { action: "conversation-open", hasTeamId: true },
+    { action: "channel-create", hasTeamId: true },
+    { action: "send", hasTeamId: false },
+>>>>>>> a82c117d57 (fix(slack): align channel creation action gates)
   ] as const)(
     "preserves only consuming schema groups when $action is allowed",
     ({ action, fields, scopedOnly }) => {
@@ -1694,8 +1700,11 @@ describe("message tool schema scoping", () => {
           "channel-list",
           "channel-create",
           "conversation-open",
+<<<<<<< HEAD
           "channel-move",
           "category-delete",
+=======
+>>>>>>> a82c117d57 (fix(slack): align channel creation action gates)
         ],
       });
       registerPlugins(plugin);
