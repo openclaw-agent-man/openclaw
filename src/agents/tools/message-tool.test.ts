@@ -1718,7 +1718,7 @@ describe("message tool schema scoping", () => {
         for (const field of fields) {
           expect(properties).toHaveProperty(field);
         }
-        if (action !== "conversation-open" && action !== "channel-create") {
+        if (action !== "conversation-open" && action !== "channel-create" && action !== "channel-create") {
           expect(properties).not.toHaveProperty("teamId");
           continue;
         }
