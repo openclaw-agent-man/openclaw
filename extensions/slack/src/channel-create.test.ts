@@ -115,7 +115,11 @@ describe("Slack channel-create", () => {
     const requests: Array<{ method: string; args: Record<string, string> }> = [];
     const fetch: NonNullable<WebClientOptions["fetch"]> = async (input, init) => {
       const url = new URL(String(input));
-      const args = Object.fromEntries(new URLSearchParams(String(init?.body)));
+      const body = init?.body;
+      if (typeof body !== "string") {
+        throw new Error("expected Slack client to serialize the request body");
+      }
+      const args = Object.fromEntries(new URLSearchParams(body));
       requests.push({ method: url.pathname.split("/").at(-1) ?? "", args });
       return new Response(JSON.stringify({ ok: true, channel: { id: "C01234567" } }), {
         headers: { "content-type": "application/json" },
