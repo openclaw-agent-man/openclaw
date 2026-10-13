@@ -215,17 +215,18 @@ async function getClient(opts: SlackActionClientOpts = {}, mode: "read" | "write
     : normalizeAccountId(opts.accountId);
   assertSlackDetachedTargetAllowed(accountId, opts.teamId);
   const token = resolveToken(opts.token, opts.accountId, opts.cfg);
+  const clientTeamId = opts.omitTeamId ? undefined : opts.teamId;
   if (mode === "write") {
     if (opts.assertDirectAdapterHandoff) {
       return createSlackWriteClient(
         token,
-        { teamId: opts.teamId },
+        { teamId: clientTeamId },
         opts.assertDirectAdapterHandoff,
       );
     }
-    return getSlackWriteClient(token, { teamId: opts.teamId });
+    return getSlackWriteClient(token, { teamId: clientTeamId });
   }
-  return createSlackLookupClient(token, { teamId: opts.teamId }, opts.assertDirectAdapterHandoff);
+  return createSlackLookupClient(token, { teamId: clientTeamId }, opts.assertDirectAdapterHandoff);
 }
 
 async function resolveBotUserId(client: WebClient) {
@@ -281,7 +282,7 @@ export async function createSlackChannel(name: unknown, opts: SlackActionClientO
       // accept team_id on conversations.invite. Do not reuse the workspace-
       // scoped WebClient here: its default teamId is injected into every API
       // request by the SDK.
-      const inviteClient = await getClient({ ...opts, teamId: undefined }, "write");
+      const inviteClient = await getClient({ ...opts, omitTeamId: true }, "write");
       await inviteClient.conversations.invite({
         channel: channelId,
         users: input.inviteUserId,
