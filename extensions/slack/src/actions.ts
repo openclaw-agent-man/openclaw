@@ -279,7 +279,6 @@ export async function createSlackChannel(name: unknown, opts: SlackActionClientO
       await client.conversations.invite({
         channel: channelId,
         users: input.inviteUserId,
-        team_id: input.teamId,
       });
     } catch (error) {
       const reason =
