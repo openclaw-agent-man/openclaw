@@ -277,7 +277,11 @@ export async function createSlackChannel(name: unknown, opts: SlackActionClientO
   let inviteWarning: string | undefined;
   if (input.inviteUserId) {
     try {
-      await client.conversations.invite({ channel: channelId, users: input.inviteUserId });
+      await client.conversations.invite({
+        channel: channelId,
+        users: input.inviteUserId,
+        team_id: input.teamId,
+      });
     } catch (error) {
       const reason =
         error instanceof Error && /missing_scope/i.test(error.message)
