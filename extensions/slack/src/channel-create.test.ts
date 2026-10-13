@@ -4,6 +4,7 @@ import { withServer } from "openclaw/plugin-sdk/test-env";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { createSlackActions } from "./channel-actions.js";
 import * as slackClient from "./client.js";
+import { registerSlackInstallationState } from "./installation-identity-state.js";
 
 afterEach(() => {
   vi.restoreAllMocks();
@@ -108,6 +109,47 @@ describe("Slack channel-create", () => {
       inviteWarning:
         "Slack is missing the invitation permission; the requesting user can join the returned public channel, or an operator can reauthorize the Slack app and retry.",
     });
+  });
+
+  it("keeps Enterprise workspace admission while omitting team_id from invitation serialization", async () => {
+    const requests: Array<{ method: string; args: Record<string, string> }> = [];
+    const fetch: NonNullable<WebClientOptions["fetch"]> = async (input, init) => {
+      const url = new URL(String(input));
+      const args = Object.fromEntries(new URLSearchParams(String(init?.body)));
+      requests.push({ method: url.pathname.split("/").at(-1) ?? "", args });
+      return new Response(JSON.stringify({ ok: true, channel: { id: "C01234567" } }), {
+        headers: { "content-type": "application/json" },
+      });
+    };
+    vi.spyOn(slackClient, "getSlackWriteClient").mockImplementation(
+      (token, options) => new WebClient(token, { ...options, fetch, retryConfig: { retries: 0 } }),
+    );
+    const installation = registerSlackInstallationState("default", "enterprise");
+    try {
+      const result = await createSlackActions("slack").handleAction!({
+        channel: "slack",
+        action: "channel-create",
+        cfg: { channels: { slack: { botToken: "xoxb-test", actions: { channels: true } } } },
+        params: { name: "proj-launch-pixel-peak" },
+        accountId: "default",
+        requesterAccountId: "default",
+        requesterSenderId: "U22222222",
+        toolContext: {
+          currentChannelProvider: "slack",
+          currentChannelId: "team:T11111111:channel:C09999999",
+        },
+      });
+      expect(result.details).toMatchObject({ invitedUserId: "U22222222" });
+      expect(requests).toEqual([
+        {
+          method: "conversations.create",
+          args: { name: "proj-launch-pixel-peak", team_id: "T11111111" },
+        },
+        { method: "conversations.invite", args: { channel: "C01234567", users: "U22222222" } },
+      ]);
+    } finally {
+      installation.release();
+    }
   });
 
   it("does not invite the requester after caller authority closes during creation", async () => {
