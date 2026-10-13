@@ -277,7 +277,12 @@ export async function createSlackChannel(name: unknown, opts: SlackActionClientO
   let inviteWarning: string | undefined;
   if (input.inviteUserId) {
     try {
-      await client.conversations.invite({
+      // conversations.create needs the selected workspace, but Slack does not
+      // accept team_id on conversations.invite. Do not reuse the workspace-
+      // scoped WebClient here: its default teamId is injected into every API
+      // request by the SDK.
+      const inviteClient = await getClient({ ...opts, teamId: undefined }, "write");
+      await inviteClient.conversations.invite({
         channel: channelId,
         users: input.inviteUserId,
       });

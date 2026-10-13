@@ -61,7 +61,7 @@ describe("Slack channel-create", () => {
       },
       {
         method: "conversations.invite",
-        args: { channel: "C01234567", users: "U22222222", team_id: "T11111111" },
+        args: { channel: "C01234567", users: "U22222222" },
       },
     ]);
   });
