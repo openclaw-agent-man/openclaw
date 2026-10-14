@@ -111,39 +111,74 @@ describe("Slack channel-create", () => {
     });
   });
 
-  it("keeps Enterprise workspace admission while omitting team_id from invitation serialization", async () => {
+  it("keeps Enterprise workspace admission at the real HTTP boundary while omitting team_id from invitation serialization", async () => {
     const requests: Array<{ method: string; args: Record<string, string> }> = [];
-    const fetch: NonNullable<WebClientOptions["fetch"]> = async (input, init) => {
-      const url = new URL(String(input));
-      const body = init?.body;
-      if (typeof body !== "string") {
-        throw new Error("expected Slack client to serialize the request body");
-      }
-      const args = Object.fromEntries(new URLSearchParams(body));
-      requests.push({ method: url.pathname.split("/").at(-1) ?? "", args });
-      return new Response(JSON.stringify({ ok: true, channel: { id: "C01234567" } }), {
-        headers: { "content-type": "application/json" },
-      });
-    };
-    vi.spyOn(slackClient, "getSlackWriteClient").mockImplementation(
-      (token, options) => new WebClient(token, { ...options, fetch, retryConfig: { retries: 0 } }),
-    );
     const installation = registerSlackInstallationState("default", "enterprise");
     try {
-      const result = await createSlackActions("slack").handleAction!({
-        channel: "slack",
-        action: "channel-create",
-        cfg: { channels: { slack: { botToken: "xoxb-test", actions: { channels: true } } } },
-        params: { name: "proj-launch-pixel-peak" },
-        accountId: "default",
-        requesterAccountId: "default",
-        requesterSenderId: "U22222222",
-        toolContext: {
-          currentChannelProvider: "slack",
-          currentChannelId: "team:T11111111:channel:C09999999",
+      for (const key of ["HTTPS_PROXY", "HTTP_PROXY", "https_proxy", "http_proxy"]) {
+        vi.stubEnv(key, undefined);
+      }
+      vi.stubEnv("NO_PROXY", "*");
+      await withServer(
+        (request, response) => {
+          const body: Buffer[] = [];
+          request.on("data", (chunk: Buffer) => body.push(chunk));
+          request.on("end", () => {
+            const args = Object.fromEntries(new URLSearchParams(Buffer.concat(body).toString()));
+            const method = request.url?.split("/").at(-1) ?? "";
+            requests.push({ method, args });
+            response.writeHead(200, { "content-type": "application/json" });
+            response.end(
+              JSON.stringify(
+                method === "conversations.create"
+                  ? { ok: true, channel: { id: "C01234567", name: args.name } }
+                  : { ok: true },
+              ),
+            );
+          });
         },
-      });
-      expect(result.details).toMatchObject({ invitedUserId: "U22222222" });
+        async (baseUrl) => {
+          vi.stubEnv("SLACK_API_URL", `${baseUrl}/api/`);
+          const adapter = createSlackActions("slack");
+          const cfg: OpenClawConfig = {
+            channels: { slack: { botToken: "xoxb-test", actions: { channels: true } } },
+          };
+          const request = {
+            channel: "slack" as const,
+            action: "channel-create",
+            cfg,
+            params: { name: "proj-launch-pixel-peak" },
+            accountId: "default",
+            requesterAccountId: "default",
+            requesterSenderId: "U22222222",
+          };
+          await expect(
+            adapter.handleAction!({
+              ...request,
+              toolContext: {
+                currentChannelProvider: "slack",
+                currentChannelId: "team:T11111111:channel:C09999999",
+              },
+            }),
+          ).resolves.toMatchObject({ details: { invitedUserId: "U22222222" } });
+          await expect(
+            adapter.handleAction!({
+              ...request,
+              toolContext: { currentChannelProvider: "slack", currentChannelId: "C09999999" },
+            }),
+          ).rejects.toThrow("unsupported_enterprise_slack_delivery");
+          await expect(
+            adapter.handleAction!({
+              ...request,
+              toolContext: {
+                currentChannelProvider: "slack",
+                currentChannelId: "team:T11111111:channel:C09999999",
+                currentMessagingTarget: "team:T22222222:channel:C09999999",
+              },
+            }),
+          ).rejects.toThrow("unsupported_enterprise_slack_delivery");
+        },
+      );
       expect(requests).toEqual([
         {
           method: "conversations.create",
