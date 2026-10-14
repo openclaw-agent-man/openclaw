@@ -145,7 +145,7 @@ describe("Slack channel-create", () => {
           };
           const request = {
             channel: "slack" as const,
-            action: "channel-create",
+            action: "channel-create" as const,
             cfg,
             params: { name: "proj-launch-pixel-peak" },
             accountId: "default",
