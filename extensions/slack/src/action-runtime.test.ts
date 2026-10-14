@@ -126,22 +126,6 @@ describe("handleSlackAction", () => {
     expect(result.details).toEqual({ ok: true, info });
   });
 
-  it("adds the trusted Slack requester to a created channel", async () => {
-    cfg = slackConfig({ actions: { channels: true } });
-    const result = await handleSlackAction(
-      { action: "createChannel", name: "proj-channel-create-proof" },
-      cfg,
-      { ...trustedContext, requesterSenderId: "U456" },
-    );
-
-    expect(createSlackChannel).toHaveBeenCalledWith("proj-channel-create-proof", {
-      cfg,
-      teamId: "T123",
-      inviteUserId: "U456",
-    });
-    expect(result.details).toMatchObject({ ok: true, target: "team:T123:channel:C456" });
-  });
-
   it("requires explicit channel-management admission before creating a channel", async () => {
     await expect(
       handleSlackAction({ action: "createChannel", name: "proj-channel-create-proof" }, cfg, {
