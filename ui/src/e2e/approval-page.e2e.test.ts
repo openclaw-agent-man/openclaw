@@ -256,6 +256,7 @@ async function expectMobilePendingLayout(page: Page): Promise<void> {
       throw new Error("Approval page back link is missing");
     }
     const backLinkBounds = backLink.getBoundingClientRect();
+    const selection = getComputedStyle(preview).userSelect;
     return {
       backLinkTop: backLinkBounds.top,
       cardBottom: cardBounds.bottom,
@@ -268,6 +269,7 @@ async function expectMobilePendingLayout(page: Page): Promise<void> {
       rootLeft: rootBounds.left,
       rootRight: rootBounds.right,
       viewportWidth: window.innerWidth,
+      selection,
     };
   });
   expect(metrics.documentOverflow).toBeLessThanOrEqual(0);
@@ -277,6 +279,7 @@ async function expectMobilePendingLayout(page: Page): Promise<void> {
   expect(metrics.cardRight).toBeLessThanOrEqual(metrics.viewportWidth);
   expect(metrics.previewRight).toBeLessThanOrEqual(metrics.viewportWidth);
   expect(metrics.previewScrollHeight).toBeGreaterThanOrEqual(metrics.previewClientHeight);
+  expect(metrics.selection).toBe("text");
   expect(metrics.backLinkTop).toBeGreaterThanOrEqual(metrics.cardBottom + 10);
 }
 
